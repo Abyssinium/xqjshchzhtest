@@ -173,6 +173,47 @@
       });
   }
 
+  /* ---------- speech ---------- */
+  var zhVoice = null,
+    supported = "speechSynthesis" in window;
+
+  function pickVoice() {
+    if (!supported) return;
+    var vs = window.speechSynthesis.getVoices() || [];
+    var zh = vs.filter(function (v) {
+      return (v.lang || "").replace("_", "-").toLowerCase().indexOf("zh") === 0;
+    });
+    if (!zh.length) {
+      zhVoice = null;
+      return;
+    }
+    // prefer mainland Mandarin
+    var cn = zh.filter(function (v) {
+      return /zh[-_]?(cn|hans)/i.test(v.lang) || /chinese/i.test(v.name);
+    });
+    zhVoice = cn[0] || zh[0];
+  }
+
+  function checkVoice() {
+    var warn = document.getElementById("warn");
+    if (!supported) {
+      warn.textContent =
+        "Your browser doesn't support speech playback, so the audio won't work here. Try Chrome, Edge, or Safari.";
+      warn.classList.remove("hide");
+      return;
+    }
+    pickVoice();
+    if (!zhVoice) {
+      warn.textContent =
+        "No Mandarin voice was found on this device, so playback may be wrong or silent. On Windows: Settings → Time & language → Speech → add Chinese (Simplified). On Android: install Google TTS Chinese data. macOS/iOS and Chrome usually have one already.";
+      warn.classList.remove("hide");
+    } else {
+      warn.classList.add("hide");
+    }
+  }
+
+  var playBtn = document.getElementById("play");
+
   function speak(text, rate) {
     try {
       const audio = new Audio(`voices/${text}.mp3`);
